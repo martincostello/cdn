@@ -1,2 +1,3 @@
-# cdn
-Source content for my CDN
+# CDN
+
+Source content for my CDN.
