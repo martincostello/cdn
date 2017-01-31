@@ -8,8 +8,11 @@ branches:
   - deploy
 
 artifacts:
-- path: 'content\**\*'
+- path: content
   name: content
+
+before_deploy:
+- ps: $root = Resolve-Path .\content; [IO.Directory]::GetFiles($root.Path, '*.*', 'AllDirectories') | % { Push-AppveyorArtifact $_ -FileName $_.Substring($root.Path.Length + 1) -DeploymentName content }
 
 deploy:
 - provider: AzureBlob
@@ -19,5 +22,6 @@ deploy:
   container: $root
   artifact: content
   set_content_type: true
+  unzip: true
   on:
     branch: deploy
