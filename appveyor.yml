@@ -8,7 +8,7 @@ branches:
   - deploy
 
 artifacts:
-- path: "content\**\*"
+- path: 'content\**\*'
   name: content
 
 deploy:
