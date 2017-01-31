@@ -1,0 +1,23 @@
+version: "{build}"
+
+build: off
+test: off
+
+branches:
+  only:
+  - deploy
+
+artifacts:
+- path: "content\**\*"
+  name: content
+
+deploy:
+- provider: AzureBlob
+  storage_account_name: martincostellocdnuk
+  storage_access_key:
+    secure: v3i6Hx1HWq7KJdqSEDvSBH3xwXfCiog7JG1KxI5F+FVGxlFx029ncCh8xs7Qp6Ibg5TW63oQuewCILPtuSR99BJ3+UOiM3yeq4ymU3zMktvBr4IihTqHzmlrF31HYD3W
+  container: $root
+  artifact: content
+  set_content_type: true
+  on:
+    branch: deploy
