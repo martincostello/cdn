@@ -13,7 +13,7 @@ artifacts:
 
 before_deploy:
 - ps: $sha = (git rev-parse HEAD | Out-String).Trim();$branch = (git rev-parse --abbrev-ref HEAD | Out-String).Trim(); New-Item content\version.txt -type file -value "$sha from $branch ($env:APPVEYOR_BUILD_NUMBER)`r`n" -force
-- ps: $root = Resolve-Path .\content; [IO.Directory]::GetFiles($root.Path, '*.*', 'AllDirectories') | % { Push-AppveyorArtifact $_ -FileName $_.Substring($root.Path.Length + 1).ToLowerInvariant() -DeploymentName content }
+- ps: $root = Resolve-Path .\content; [IO.Directory]::GetFiles($root.Path, '*.*', 'AllDirectories') | % { Push-AppveyorArtifact $_ -FileName $_.Substring($root.Path.Length + 1).ToLowerInvariant().Replace('\', '_') -DeploymentName content }
 
 deploy:
 - provider: AzureBlob
