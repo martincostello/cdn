@@ -36,7 +36,7 @@ jobs:
         $build = $env:GITHUB_RUN_ID
         $sha = $env:GITHUB_SHA
         New-Item '${{ env.STAGING_DIRECTORY }}' -Type Directory -Force
-        New-Item (Join-Path '${{ env.STAGING_DIRECTORY }}' 'version.txt') -Type File -Value '$sha from $branch ($build)`r`n' -Force
+        New-Item (Join-Path '${{ env.STAGING_DIRECTORY }}' 'version.txt') -Type File -Value "$sha from $branch ($build)`r`n" -Force
 
     - name: Create content
       shell: pwsh
