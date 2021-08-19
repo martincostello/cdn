@@ -2,7 +2,7 @@ name: deploy
 
 on:
   push:
-    #branches: [ deploy ]
+    branches: [ main, deploy ]
     paths-ignore:
     - '**/*.md'
     - '**/*.gitignore'
@@ -16,8 +16,7 @@ env:
   CONTENT_DIRECTORY: content
   STAGING_DIRECTORY: _staging
   STORAGE_ACCOUNT_NAME: martincostellocdnuk
-  #STORAGE_CONTAINER_NAME: $root
-  STORAGE_CONTAINER_NAME: test
+  STORAGE_CONTAINER_NAME: $root
 
 jobs:
   build:
@@ -52,7 +51,7 @@ jobs:
         path: ./${{ env.STAGING_DIRECTORY }}
 
   deploy:
-    #if: ${{ github.ref == 'refs/heads/deploy' }}
+    if: ${{ github.ref == 'refs/heads/deploy' }}
     name: deploy
     needs: build
     runs-on: ubuntu-latest
