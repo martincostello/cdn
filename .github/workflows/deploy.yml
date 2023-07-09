@@ -4,24 +4,26 @@ on:
   push:
     branches: [ main, deploy ]
     paths-ignore:
-    - '**/*.md'
-    - '**/*.gitignore'
-    - '**/*.gitattributes'
+      - '**/*.gitattributes'
+      - '**/*.gitignore'
+      - '**/*.md'
   pull_request:
     branches: [ main ]
   workflow_dispatch:
 
 env:
   ARTIFACT_NAME: content
-  CONTENT_DIRECTORY: content
-  STAGING_DIRECTORY: _staging
-  STORAGE_ACCOUNT_NAME: martincostellocdnuk
-  STORAGE_CONTAINER_NAME: $root
+
+permissions:
+  contents: read
 
 jobs:
   build:
     name: build
     runs-on: windows-latest
+
+    env:
+      STAGING_DIRECTORY: _staging
 
     steps:
 
@@ -31,16 +33,16 @@ jobs:
     - name: Create version file
       shell: pwsh
       run: |
-        $branch = ($env:GITHUB_REF).Substring(11)
+        $branch = $env:GITHUB_REF_NAME
         $build = $env:GITHUB_RUN_ID
         $sha = $env:GITHUB_SHA
         New-Item '${{ env.STAGING_DIRECTORY }}' -Type Directory -Force
-        New-Item (Join-Path '${{ env.STAGING_DIRECTORY }}' 'version.txt') -Type File -Value "$sha from $branch ($build)`r`n" -Force
+        New-Item (Join-Path '${{ env.STAGING_DIRECTORY }}' 'version.txt') -Type File -Value "$sha from ${branch} (${build})`r`n" -Force
 
     - name: Create content
       shell: pwsh
       run: |
-        $root = Resolve-Path '${{ env.CONTENT_DIRECTORY }}'
+        $root = Resolve-Path 'content'
         [IO.Directory]::GetFiles($root.Path, '*.*', 'AllDirectories') | % { Copy-Item $_ -Destination (Join-Path '${{ env.STAGING_DIRECTORY }}' ($_.Substring($root.Path.Length + 1).ToLowerInvariant().Replace('\', '_'))) }
 
     - name: Publish content
@@ -49,13 +51,21 @@ jobs:
       with:
         name: ${{ env.ARTIFACT_NAME }}
         path: ./${{ env.STAGING_DIRECTORY }}
+        if-no-files-found: error
 
   deploy:
-    if: ${{ github.ref == 'refs/heads/deploy' }}
+    if: ${{ github.event.repository.fork == false && github.ref == 'refs/heads/deploy' }}
     name: deploy
     needs: build
     runs-on: ubuntu-latest
     concurrency: azure-cdn
+
+    env:
+      STORAGE_ACCOUNT_NAME: martincostellocdnuk
+      STORAGE_CONTAINER_NAME: $root
+
+    permissions:
+      id-token: write
 
     steps:
 
@@ -67,15 +77,16 @@ jobs:
     - name: Azure log in
       uses: azure/login@v1
       with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     - name: Upload to Azure Blob Storage
       uses: azure/CLI@v1
       with:
         inlineScript: |
-            az storage blob upload-batch --account-name ${{ env.STORAGE_ACCOUNT_NAME }} -d '${{ env.STORAGE_CONTAINER_NAME }}' -s .
+          az storage blob upload-batch --account-name ${{ env.STORAGE_ACCOUNT_NAME }} -d '${{ env.STORAGE_CONTAINER_NAME }}' -s .
 
     - name: Azure log out
-      run: |
-            az logout
       if: always()
+      run: az logout
