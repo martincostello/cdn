@@ -85,8 +85,4 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          az storage blob upload-batch --account-name ${{ env.STORAGE_ACCOUNT_NAME }} -d '${{ env.STORAGE_CONTAINER_NAME }}' -s .
-
-    - name: Azure log out
-      if: always()
-      run: az logout
+          az storage blob upload-batch --account-name ${{ env.STORAGE_ACCOUNT_NAME }} --destination '${{ env.STORAGE_CONTAINER_NAME }}' --source .
