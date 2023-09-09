@@ -19,7 +19,6 @@ permissions:
 
 jobs:
   build:
-    name: build
     runs-on: windows-latest
 
     env:
@@ -33,29 +32,25 @@ jobs:
     - name: Create version file
       shell: pwsh
       run: |
-        $branch = $env:GITHUB_REF_NAME
-        $build = $env:GITHUB_RUN_ID
-        $sha = $env:GITHUB_SHA
-        New-Item '${{ env.STAGING_DIRECTORY }}' -Type Directory -Force
-        New-Item (Join-Path '${{ env.STAGING_DIRECTORY }}' 'version.txt') -Type File -Value "$sha from ${branch} (${build})`r`n" -Force
+        New-Item "${env:STAGING_DIRECTORY}" -Type Directory -Force
+        New-Item (Join-Path "${env:STAGING_DIRECTORY}" "version.txt") -Type File -Value "${env:GITHUB_SHA} from ${env:GITHUB_REF_NAME} (${env:GITHUB_RUN_ID})`r`n" -Force
 
     - name: Create content
       shell: pwsh
       run: |
-        $root = Resolve-Path 'content'
-        [IO.Directory]::GetFiles($root.Path, '*.*', 'AllDirectories') | % { Copy-Item $_ -Destination (Join-Path '${{ env.STAGING_DIRECTORY }}' ($_.Substring($root.Path.Length + 1).ToLowerInvariant().Replace('\', '_'))) }
+        $root = Resolve-Path "content"
+        [IO.Directory]::GetFiles($root.Path, "*.*", 'AllDirectories') | % { Copy-Item $_ -Destination (Join-Path "${env:STAGING_DIRECTORY}" ($_.Substring($root.Path.Length + 1).ToLowerInvariant().Replace("\", "_"))) }
 
     - name: Publish content
       uses: actions/upload-artifact@v3
-      if: ${{ always() }}
+      if: ${{ !cancelled() }}
       with:
         name: ${{ env.ARTIFACT_NAME }}
         path: ./${{ env.STAGING_DIRECTORY }}
         if-no-files-found: error
 
   deploy:
-    if: ${{ github.event.repository.fork == false && github.ref == 'refs/heads/deploy' }}
-    name: deploy
+    if: github.event.repository.fork == false && github.ref_name == 'deploy'
     needs: build
     runs-on: ubuntu-latest
     concurrency: azure-cdn
@@ -85,4 +80,4 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          az storage blob upload-batch --account-name ${{ env.STORAGE_ACCOUNT_NAME }} --destination '${{ env.STORAGE_CONTAINER_NAME }}' --source .
+          az storage blob upload-batch --account-name "${env:STORAGE_ACCOUNT_NAME}" --destination "${env:STORAGE_CONTAINER_NAME}" --source .
