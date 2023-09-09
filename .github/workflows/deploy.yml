@@ -13,6 +13,8 @@ on:
 
 env:
   ARTIFACT_NAME: content
+  FORCE_COLOR: 3
+  TERM: xterm
 
 permissions:
   contents: read
@@ -49,9 +51,26 @@ jobs:
         path: ./${{ env.STAGING_DIRECTORY }}
         if-no-files-found: error
 
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Lint workflows
+      shell: bash
+      env:
+        ACTIONLINT_VERSION: '7b75d16d41920ec126e6f3269db0c6f3ab613c38' # v1.6.25
+      run: |
+        echo "::add-matcher::.github/actionlint-matcher.json"
+        bash <(curl --silent --show-error "https://raw.githubusercontent.com/rhysd/actionlint/${ACTIONLINT_VERSION}/scripts/download-actionlint.bash")
+        ./actionlint -color
+
   deploy:
     if: github.event.repository.fork == false && github.ref_name == 'deploy'
-    needs: build
+    needs: [ build, lint ]
     runs-on: ubuntu-latest
     concurrency: azure-cdn
 
