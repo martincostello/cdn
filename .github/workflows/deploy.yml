@@ -98,4 +98,4 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          az storage blob upload-batch --auth-mode login --account-name '${{ env.STORAGE_ACCOUNT_NAME }}' --destination '${{ env.STORAGE_CONTAINER_NAME }}' --source .
+          az storage blob upload-batch --account-name '${{ env.STORAGE_ACCOUNT_NAME }}' --destination '${{ env.STORAGE_CONTAINER_NAME }}' --source .
