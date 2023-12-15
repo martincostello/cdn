@@ -44,7 +44,7 @@ jobs:
         [IO.Directory]::GetFiles($root.Path, "*.*", 'AllDirectories') | % { Copy-Item $_ -Destination (Join-Path "${env:STAGING_DIRECTORY}" ($_.Substring($root.Path.Length + 1).ToLowerInvariant().Replace("\", "_"))) }
 
     - name: Publish content
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
         name: ${{ env.ARTIFACT_NAME }}
