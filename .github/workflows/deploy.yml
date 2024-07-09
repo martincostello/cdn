@@ -98,4 +98,5 @@ jobs:
       uses: azure/CLI@v2
       with:
         inlineScript: |
-          az storage blob upload-batch --account-name '${{ env.STORAGE_ACCOUNT_NAME }}' --destination '${{ env.STORAGE_CONTAINER_NAME }}' --source . --if-modified-since (Get-Date -Format "yyyy-MM-dd'T'00:00'Z'")
+          $today = (Get-Date -Format "yyyy-MM-dd'T'00:00'Z'")
+          az storage blob upload-batch --account-name '${{ env.STORAGE_ACCOUNT_NAME }}' --destination '${{ env.STORAGE_CONTAINER_NAME }}' --source . --if-modified-since $today
