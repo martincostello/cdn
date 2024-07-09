@@ -87,13 +87,6 @@ jobs:
       with:
         name: ${{ env.ARTIFACT_NAME }}
 
-    - name: Get date
-      id: get-date
-      shell: pwsh
-      run: |
-        $today = (Get-Date -Format "yyyy-MM-dd'T'00:00'Z'")
-        "today=$today" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
     - name: Azure log in
       uses: azure/login@v2
       with:
@@ -105,4 +98,4 @@ jobs:
       uses: azure/CLI@v2
       with:
         inlineScript: |
-          az storage blob upload-batch --account-name '${{ env.STORAGE_ACCOUNT_NAME }}' --destination '${{ env.STORAGE_CONTAINER_NAME }}' --source . --if-modified-since '${{ steps.get-date.outputs.today }}' --overwrite
+          az storage blob upload-batch --account-name '${{ env.STORAGE_ACCOUNT_NAME }}' --destination '${{ env.STORAGE_CONTAINER_NAME }}' --overwrite --source .
