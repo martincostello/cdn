@@ -44,7 +44,7 @@ jobs:
       shell: pwsh
       run: |
         $root = Resolve-Path "content"
-        [IO.Directory]::GetFiles($root.Path, "*.*", 'AllDirectories') | % { Copy-Item $_ -Destination (Join-Path "${env:STAGING_DIRECTORY}" ($_.Substring($root.Path.Length + 1).ToLowerInvariant().Replace("\", "_"))) }
+        [IO.Directory]::GetFiles($root.Path, "*.*", 'AllDirectories') | ForEach-Object { Copy-Item $_ -Destination (Join-Path "${env:STAGING_DIRECTORY}" ($_.Substring($root.Path.Length + 1).ToLowerInvariant().Replace("\", "_"))) }
 
     - name: Publish content
       uses: actions/upload-artifact@v4
