@@ -95,15 +95,16 @@ jobs:
           exit 1
         }
 
-  deploy:
+  deploy-azure:
     if: github.event.repository.fork == false && github.ref_name == 'deploy'
     needs: [ build, lint ]
     runs-on: ubuntu-latest
+
     concurrency: azure-cdn
 
-    env:
-      STORAGE_ACCOUNT_NAME: martincostellocdnuk
-      STORAGE_CONTAINER_NAME: $root
+    environment:
+      name: azure
+      url: https://cdn.martincostello.com
 
     permissions:
       id-token: write
@@ -126,4 +127,43 @@ jobs:
       uses: azure/CLI@v2
       with:
         inlineScript: |
-          az storage blob upload-batch --account-name '${{ env.STORAGE_ACCOUNT_NAME }}' --destination '${{ env.STORAGE_CONTAINER_NAME }}' --overwrite --source .
+          az storage blob upload-batch --account-name 'martincostellocdnuk' --destination '$root' --overwrite --source .
+
+  deploy-aws:
+    if: github.event.repository.fork == false && github.ref_name == 'deploy'
+    needs: [ build, lint ]
+    runs-on: ubuntu-latest
+
+    concurrency: aws-cdn
+
+    environment:
+      name: aws
+      url: http://cdn.martincostello.com.s3-eu-west-1.amazonaws.com
+
+    permissions:
+      id-token: write
+
+    steps:
+
+    - name: Download content
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_DEPLOYMENT_ROLE }}
+        role-session-name: ${{ github.event.repository.name }}-${{ github.run_id }}-deploy
+        aws-region: eu-west-1
+
+    - name: Deploy to S3
+      run: aws s3 sync . s3://cdn.martincostello.com --cache-control 'max-age=604800' --delete
+
+    - name: Create CloudFront invalidation
+      shell: pwsh
+      env:
+        DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+      run: |
+        $invalidationId = aws cloudfront create-invalidation --distribution-id ${env:DISTRIBUTION_ID} --paths "/*" --output text --query "Invalidation.Id"
+        aws cloudfront wait invalidation-completed --distribution-id ${env:DISTRIBUTION_ID} --id $invalidationId
