@@ -16,8 +16,7 @@ env:
   FORCE_COLOR: 3
   TERM: xterm
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   build:
@@ -25,6 +24,9 @@ jobs:
 
     env:
       STAGING_DIRECTORY: _staging
+
+    permissions:
+      contents: read
 
     steps:
 
@@ -37,14 +39,14 @@ jobs:
     - name: Create version file
       shell: pwsh
       run: |
-        New-Item "${env:STAGING_DIRECTORY}" -Type Directory -Force
-        New-Item (Join-Path "${env:STAGING_DIRECTORY}" "version.txt") -Type File -Value "${env:GITHUB_SHA} from ${env:GITHUB_REF_NAME} (${env:GITHUB_RUN_ID})`r`n" -Force
+        New-Item ${env:STAGING_DIRECTORY} -Type Directory -Force
+        New-Item (Join-Path ${env:STAGING_DIRECTORY} "version.txt") -Type File -Value "${env:GITHUB_SHA} from ${env:GITHUB_REF_NAME} (${env:GITHUB_RUN_ID})`r`n" -Force
 
     - name: Create content
       shell: pwsh
       run: |
         $root = Resolve-Path "content"
-        [IO.Directory]::GetFiles($root.Path, "*.*", 'AllDirectories') | ForEach-Object { Copy-Item $_ -Destination (Join-Path "${env:STAGING_DIRECTORY}" ($_.Substring($root.Path.Length + 1).ToLowerInvariant().Replace("\", "_"))) }
+        [IO.Directory]::GetFiles($root.Path, "*.*", 'AllDirectories') | ForEach-Object { Copy-Item $_ -Destination (Join-Path ${env:STAGING_DIRECTORY} ($_.Substring($root.Path.Length + 1).ToLowerInvariant().Replace("\", "_"))) }
 
     - name: Publish content
       uses: actions/upload-artifact@v4
@@ -56,6 +58,9 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
 
     steps:
 
@@ -95,50 +100,16 @@ jobs:
           exit 1
         }
 
-  deploy-azure:
+  deploy:
     if: github.event.repository.fork == false && github.ref_name == 'deploy'
     needs: [ build, lint ]
     runs-on: ubuntu-latest
 
-    concurrency: azure-cdn
-
-    environment:
-      name: azure
-      url: https://cdn.martincostello.com
-
-    permissions:
-      id-token: write
-
-    steps:
-
-    - name: Download content
-      uses: actions/download-artifact@v4
-      with:
-        name: ${{ env.ARTIFACT_NAME }}
-
-    - name: Azure log in
-      uses: azure/login@v2
-      with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-    - name: Upload to Azure Blob Storage
-      uses: azure/CLI@v2
-      with:
-        inlineScript: |
-          az storage blob upload-batch --account-name 'martincostellocdnuk' --destination '$root' --overwrite --source .
-
-  deploy-aws:
-    if: github.event.repository.fork == false && github.ref_name == 'deploy'
-    needs: [ build, lint ]
-    runs-on: ubuntu-latest
-
-    concurrency: aws-cdn
+    concurrency: aws
 
     environment:
       name: aws
-      url: http://cdn.martincostello.com.s3-eu-west-1.amazonaws.com
+      url: https://cdn.martincostello.com
 
     permissions:
       id-token: write
