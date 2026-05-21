@@ -24,7 +24,7 @@ permissions: {}
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2025
 
     env:
       STAGING_DIRECTORY: _staging
@@ -62,7 +62,7 @@ jobs:
         if-no-files-found: error
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     permissions:
       actions: read
@@ -116,7 +116,7 @@ jobs:
   deploy:
     if: github.event.repository.fork == false && github.ref_name == 'deploy'
     needs: [ build, lint ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     concurrency: aws
 
