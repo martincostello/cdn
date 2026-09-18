@@ -62,7 +62,7 @@ jobs:
         if-no-files-found: error
 
   lint:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     permissions:
       actions: read
@@ -116,7 +116,7 @@ jobs:
   deploy:
     if: github.event.repository.fork == false && github.ref_name == 'deploy'
     needs: [ build, lint ]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     concurrency: aws
 
